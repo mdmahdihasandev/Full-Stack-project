@@ -1,12 +1,13 @@
 import { useState } from "react";
-
-function Field({ label, type = "text", value, onChange, error, placeholder, right }) {
+import axios from "axios"
+function Field({ label, type = "text", value, name, onChange, error, placeholder, right }) {
   return (
     <div>
       <label className="mb-1.5 block text-sm font-medium text-stone-700">{label}</label>
       <div className="relative">
         <input
           type={type}
+          name={name}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
@@ -23,13 +24,15 @@ function Field({ label, type = "text", value, onChange, error, placeholder, righ
 
 export default function AuthPage() {
   const [mode, setMode] = useState("login");
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirmpassword: "" ,  terms: true});
   const [errors, setErrors] = useState({});
   const [showPw, setShowPw] = useState(false);
   const [done, setDone] = useState("");
+  const [error, seterror] = useState("");
 
   const isLogin = mode === "login";
-  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+
+
 
   const switchMode = (m) => {
     setMode(m);
@@ -37,32 +40,68 @@ export default function AuthPage() {
     setDone("");
   };
 
-  const validate = () => {
-    const err = {};
-    if (!isLogin && form.name.trim().length < 2) err.name = "Apnar nam likhun";
-    if (!/^\S+@\S+\.\S+$/.test(form.email)) err.email = "Valid email din";
-    if (form.password.length < 6) err.password = "Komopokkhe 6 ta character din";
-    if (!isLogin && form.confirm !== form.password) err.confirm = "Password mile nai";
-    return err;
-  };
 
-  const handleSubmit = () => {
-    const err = validate();
-    setErrors(err);
-    if (Object.keys(err).length) return;
-    // TODO: ekhane apnar API call boshan (fetch/axios)
-    setDone(isLogin ? "Login successful!" : "Account toiri hoyeche!");
-  };
 
-  const toggle = (
-    <button
-      type="button"
-      onClick={() => setShowPw(!showPw)}
-      className="text-xs font-medium text-stone-500 hover:text-stone-800"
-    >
-      {showPw ? "Hide" : "Show"}
-    </button>
-  );
+ 
+
+const handleSubmit = async () => {
+  seterror("");
+  setDone("");
+  setErrors({});
+
+  try {
+    let data = await axios.post(
+      "http://localhost:5000/registration",
+      form
+    );
+
+    console.log(data.data);
+
+    if (data.data.success) {
+      setDone(data.data.message);
+
+      setForm({
+        name: "",
+        email: "",
+        password: "",
+        confirmpassword: "",
+        terms: true
+      });
+
+    } else {
+      setErrors(data.data.error || {});
+    }
+
+  }
+  
+  catch (err) {
+    let response = err.response?.data;
+
+    console.log(response);
+
+    setErrors(response?.error || {});
+  }
+};
+
+
+
+  
+const handlechange = (e) => {
+  setForm({
+    ...form,
+    [e.target.name]: e.target.value
+  });
+
+  setErrors({
+    ...errors,
+    [e.target.name]: ""
+  });
+
+  seterror("");
+};
+
+
+
 
   return (
     <div className="flex  min-h-screen bg-stone-100">
@@ -72,6 +111,12 @@ export default function AuthPage() {
       {/* Form panel */}
       <div className="flex w-full items-center justify-center px-6 py-12 lg:w-1/2">
         <div className="w-full max-w-sm">
+           {done && (
+              <p className="rounded-lg bg-green-500 px-3 py-2 text-center text-sm text-white">{done}</p>
+            )}
+           {error && (
+              <p className="rounded-lg bg-red-500 px-3 py-2 text-center text-sm text-white">{error}</p>
+            )}
           <div className="mb-8 grid grid-cols-2 rounded-lg bg-stone-200 p-1 text-sm font-medium">
             {["login", "register"].map((m) => (
               <button
@@ -96,28 +141,66 @@ export default function AuthPage() {
 
           <div className="space-y-4">
             {!isLogin && (
-              <Field label="Full name" value={form.name} onChange={set("name")} error={errors.name} placeholder="Rahim Uddin" />
+              <Field 
+            label="Full name"
+            value={form.name}
+            name= "name"
+            onChange={handlechange}
+            error={errors.name} 
+            placeholder="Rahim Uddin" />
             )}
-            <Field label="Email" type="email" value={form.email} onChange={set("email")} error={errors.email} placeholder="you@example.com" />
-            <Field
+            <Field label="Email"
+             type="email" 
+             value={form.email}
+             name = "email"
+             onChange={handlechange} 
+             error={errors.email} 
+             placeholder="you@example.com" />
+
+           
+             <Field
               label="Password"
               type={showPw ? "text" : "password"}
               value={form.password}
-              onChange={set("password")}
+              name = "password"
+              onChange={handlechange}
               error={errors.password}
               placeholder="••••••"
-              right={toggle}
+              
             />
             {!isLogin && (
               <Field
                 label="Confirm password"
                 type={showPw ? "text" : "password"}
-                value={form.confirm}
-                onChange={set("confirm")}
-                error={errors.confirm}
+                value={form.confirmpassword}
+                name = "confirmpassword"
+                onChange={handlechange}
+                error={errors.confirmpassword}
                 placeholder="••••••"
               />
             )}
+
+            
+            {!isLogin && (
+          <div className="flex items-center gap-2">
+              <input
+                  type="checkbox"
+                  name="terms"
+                  checked={form.terms}
+                  onChange={(e) =>
+                      setForm({
+                          ...form,
+                          terms: e.target.checked
+                      })
+                  }
+              />
+
+              <label className="text-sm text-stone-700">
+                  I agree to the Terms and Conditions
+              </label>
+          </div>
+          )}
+
 
             {isLogin && (
               <div className="text-right">
@@ -135,9 +218,7 @@ export default function AuthPage() {
               {isLogin ? "Login" : "Create account"}
             </button>
 
-            {done && (
-              <p className="rounded-lg bg-teal-50 px-3 py-2 text-center text-sm text-teal-900">{done}</p>
-            )}
+           
           </div>
 
           <p className="mt-6 text-center text-sm text-stone-600">

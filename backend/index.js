@@ -1,6 +1,7 @@
 require('dotenv').config()
 let express = require('express')
 let app = express()
+let cors = require('cors')
 let configdata = require('./config/config')
 let logincontroler = require('./controler/loginControler')
 let presentationtodo = require('./controler/presentationControler')
@@ -10,7 +11,7 @@ let presentationdelete = require('./controler/presentationdatadeleted')
 let presentationupdate = require('./controler/presentationupdate')
 
 app.use(express.json())
-
+app.use(cors())
 configdata()
 
 app.post('/registration',  controler)

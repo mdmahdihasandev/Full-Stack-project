@@ -2,12 +2,12 @@
  const nodemailer = require("nodemailer");
 
  const transporter = nodemailer.createTransport({
-  host: "gmail",
+  service: "gmail",
   port: 587,
   secure: false, // use STARTTLS (upgrade connection to TLS after connecting)
   auth: {
     user: 'mahdihasansojip@gmail.com',
-    pass: process.env.SMTP_PASS,
+    pass: 'ilhjggtbuvyujcqr',
   },
 });
 
@@ -55,6 +55,14 @@
     subject: "Hello", // subject line
     html: "<b>Hello world?</b>", // HTML body
   });
+
+  transporter.verify((error, success) => {
+    if (error) {
+        console.log(error);
+    } else {
+        console.log("Gmail server is ready!");
+    }
+});
 
   console.log("Message sent: %s", info.messageId);
   // Preview URL is only available when using an Ethereal test account
